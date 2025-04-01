@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление настройками теплицы</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+        .tabs button {
+            padding: 10px 20px;
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .tabs button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .macro, .template {
+            background-color: #f9f9f9;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .macro button, .template button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .macro button:hover, .template button:hover {
+            background-color: #45a049;
+        }
+        #path-input {
+            display: none;
+            margin-bottom: 20px;
+        }
+        #path-input input {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Управление настройками теплицы</h1>
+
+    <div id="path-input">
+        <label for="ini-path">Введите путь до INI файла:</label>
+        <input type="text" id="ini-path" placeholder="Укажите путь">
+        <button onclick="saveIniPath()">Сохранить путь</button>
+    </div>
+
+    <div class="tabs">
+        <button id="macros-tab" class="active" onclick="switchTab('macros')">Макросы</button>
+        <button id="templates-tab" onclick="switchTab('templates')">Шаблоны</button>
+    </div>
+
+    <div id="macros" class="tab-content active">
+        <h3>Список макросов:</h3>
+        <div id="macros-list"></div>
+    </div>
+
+    <div id="templates" class="tab-content">
+        <h3>Список шаблонов:</h3>
+        <div id="templates-list"></div>
+    </div>
+
+    <div class="message" id="success-message">Изменения успешно применены!</div>
+</div>
+
+<script>
+    const serverUrl = "http://127.0.0.1:8000";  // Замените на свой сервер
+    let iniPath = localStorage.getItem("iniPath");
+
+    // Проверяем путь к файлу при загрузке страницы
+    window.onload = function() {
+        if (!iniPath) {
+            document.getElementById("path-input").style.display = "block";
+        } else {
+            fetchMacros();
+            fetchTemplates();
+        }
+    };
+
+    // Сохраняем путь к INI файлу в локальное хранилище
+    function saveIniPath() {
+        iniPath = document.getElementById("ini-path").value;
+        localStorage.setItem("iniPath", iniPath);
+        document.getElementById("path-input").style.display = "none";
+        fetchMacros();
+        fetchTemplates();
+    }
+
+    // Переключение вкладок
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.querySelectorAll('.tabs button').forEach(button => {
+            button.classList.remove('active');
+        });
+        document.getElementById(tab).classList.add('active');
+        document.getElementById(`${tab}-tab`).classList.add('active');
+    }
+
+    // Получаем макросы с сервера
+    function fetchMacros() {
+        fetch(`${serverUrl}/macros`)
+            .then(response => response.json())
+            .then(data => {
+                const macrosList = document.getElementById("macros-list");
+                macrosList.innerHTML = '';
+                data.forEach(macro => {
+                    const macroDiv = document.createElement("div");
+                    macroDiv.classList.add("macro");
+                    macroDiv.innerHTML = `
+                        <strong>${macro.name}</strong><br>
+                        Параметр: ${macro.parameter}<br>
+                        Значение: ${macro.value}<br>
+                        <button onclick="applyMacro('${macro.name}')">Отправить</button>
+                    `;
+                    macrosList.appendChild(macroDiv);
+                });
+            });
+    }
+
+    // Получаем шаблоны с сервера
+    function fetchTemplates() {
+        fetch(`${serverUrl}/templates`)
+            .then(response => response.json())
+            .then(data => {
+                const templatesList = document.getElementById("templates-list");
+                templatesList.innerHTML = '';
+                data.forEach(template => {
+                    const templateDiv = document.createElement("div");
+                    templateDiv.classList.add("template");
+                    templateDiv.innerHTML = `
+                        <strong>${template.name}</strong><br>
+                        Макросы: ${template.macro_names.join(', ')}<br>
+                        <button onclick="applyTemplate('${template.name}')">Отправить</button>
+                    `;
+                    templatesList.appendChild(templateDiv);
+                });
+            });
+    }
+
+    // Отправить макрос
+    function applyMacro(macroName) {
+        fetch(`${serverUrl}/apply_macro/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ macro_name: macroName, ini_path: iniPath }),
+        }).then(response => {
+            if (response.ok) {
+                document.getElementById("success-message").style.display = "block";
+                setTimeout(() => {
+                    document.getElementById("success-message").style.display = "none";
+                }, 3000);
+            }
+        });
+    }
+
+    // Отправить шаблон
+    function applyTemplate(templateName) {
+        fetch(`${serverUrl}/apply_template/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ template_name: templateName, ini_path: iniPath }),
+        }).then(response => {
+            if (response.ok) {
+                document.getElementById("success-message").style.display = "block";
+                setTimeout(() => {
+                    document.getElementById("success-message").style.display = "none";
+                }, 3000);
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
