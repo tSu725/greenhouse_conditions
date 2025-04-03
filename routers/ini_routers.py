@@ -4,34 +4,30 @@ import re
 import configparser
 from fastapi import APIRouter, HTTPException
 
-router = APIRouter(prefix="/ini", tags=["Манипуляции с ini"])
+from greenhouse_conditions.config import Config
 
-CONFIG_FILE = "settings.config"
+router = APIRouter(prefix="/ini", tags=["Манипуляции с ini"])
 
 # Нормализация пути (удаление дублирующихся слэшей)
 def normalize_path(path: str) -> str:
     return re.sub(r"\\+", r"\\", path)
-
-
 @router.post("/set_ini_path/{path}", summary="Устанавливаем путь до файла конфигураций")
 def set_ini_path(path: str):
     try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        with open(Config.CONFIG_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         raise HTTPException(status_code=500, detail="Файл конфигурации отсутствует или поврежден")
 
     data["ini_path"] = path
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+    with open(Config.CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
     return {"ok": True}
-
-
 @router.get("/parse_ini", summary="Парсим INI-файл и возвращаем данные")
 def parse_ini():
     try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as config:
+        with open(Config.CONFIG_FILE, "r", encoding="utf-8") as config:
             data = json.load(config)
     except (FileNotFoundError, json.JSONDecodeError):
         raise HTTPException(status_code=500, detail="Файл конфигурации отсутствует или поврежден")
