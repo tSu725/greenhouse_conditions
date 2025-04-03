@@ -14,12 +14,10 @@ def get_macros_filename_length():
             return len(file)
     except FileNotFoundError:
         return 0
-
 class MacrosSchema(BaseModel):
     name: str = Field(default="macros")
     key: str
     value: Union[int, float]
-
 @router.post('/create_macros', summary='Создаем новый макрос')
 def create_macros(macros: MacrosSchema):
     # Считываем текущие макросы
@@ -41,13 +39,11 @@ def create_macros(macros: MacrosSchema):
     with open(Config.MACROS_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
     return {"message": "Макрос добавлен", "macro": new_macro}
-
 @router.get('/get_list_macros', summary='Получаем список макросов')
 def get_list_macros():
     with open(Config.MACROS_FILE, 'r', encoding='utf-8') as f:
         file = json.load(f)
         return file
-
 @router.delete('/delete_macros/{macros_name}', summary='Удалить макрос')
 def delete_macros(macros_name: str):
     name = macros_name

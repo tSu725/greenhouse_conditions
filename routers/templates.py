@@ -1,20 +1,18 @@
 import json
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from greenhouse_conditions.config import Config
-from greenhouse_conditions.routers.macros import MacrosSchema
+
 
 router = APIRouter(prefix='/templates', tags=["Шаблоны"])
 
 class TemplateSchema(BaseModel):
     name: str = Field(default="template")
     macros_list: list[str]
-
 # Pydantic-модель для тела запроса
 class MacrosInput(BaseModel):
     macros_name: str
-
 @router.get('/get_list_templates', summary='Получаем список шаблонов')
 def get_list_templates():
     with open(Config.TEMPLATES_FILE, 'r', encoding='utf-8') as f:
@@ -88,9 +86,6 @@ def add_macros(template_name: str, macros: MacrosInput):
         json.dump(templates_data, f, indent=4, ensure_ascii=False)
 
     return {"message": f"Макрос '{macros.macros_name}' добавлен в шаблон '{template_name}'."}
-
-
-
 @router.delete('/delete_macros/{template_name}', summary='Удаляем макрос из шаблона')
 def delete_macros_from_template(template_name: str, macros: MacrosInput):
     try:
@@ -122,12 +117,25 @@ def delete_macros_from_template(template_name: str, macros: MacrosInput):
         json.dump(data, f, indent=4, ensure_ascii=False)
 
     return {"message": "Макрос удалён", "template": data}
-
-
-
-
-
-
 @router.delete('/delete_template/{template_name}', summary='Удалить шаблон')
-def delete_templetes(template_name: str):
-    pass
+def delete_template(template_name: str):
+    try:
+        with open(Config.TEMPLATES_FILE, 'r', encoding='utf-8') as f:
+            templates_data = json.load(f)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Файл шаблонов {Config.TEMPLATES_FILE} не найден")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Ошибка при чтении JSON-файла")
+
+    # Проверяем, существует ли шаблон
+    if template_name not in templates_data:
+        raise HTTPException(status_code=404, detail=f"Шаблон '{template_name}' не найден.")
+
+    # Удаляем шаблон
+    del templates_data[template_name]
+
+    # Записываем обновленные данные обратно в файл
+    with open(Config.TEMPLATES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(templates_data, f, indent=4, ensure_ascii=False)
+
+    return {"message": f"Шаблон '{template_name}' успешно удалён."}
