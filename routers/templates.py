@@ -10,14 +10,17 @@ router = APIRouter(prefix='/templates', tags=["Шаблоны"])
 class TemplateSchema(BaseModel):
     name: str = Field(default="template")
     macros_list: list[str]
+
 # Pydantic-модель для тела запроса
 class MacrosInput(BaseModel):
     macros_name: str
+
 @router.get('/get_list_templates', summary='Получаем список шаблонов')
 def get_list_templates():
     with open(Config.TEMPLATES_FILE, 'r', encoding='utf-8') as f:
         file = json.load(f)
         return file
+
 @router.post('/create_template', summary='Создаем новый шаблон')
 def create_template(template: TemplateSchema):
     # Загружаем список шаблонов
