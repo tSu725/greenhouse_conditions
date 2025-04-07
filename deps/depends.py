@@ -35,11 +35,17 @@ class Deps:
             raise HTTPException(status_code=400, detail="Некорректный путь к INI-файлу")
         return ini_path
 
+    # @staticmethod
+    # def get_macro_entry(macro: str, macros_data: Dict = Depends(get_macros_data)) -> Dict:
+    #     if macro not in macros_data:
+    #         raise HTTPException(status_code=400, detail=f"Макрос '{macro}' не найден")
+    #     return macros_data[macro]['key']
+
     @staticmethod
-    def get_macro_entry(macros: str, macros_data: Dict = Depends(get_macros_data)) -> Dict:
-        if macros not in macros_data:
-            raise HTTPException(status_code=400, detail=f"Макрос '{macros}' не найден")
-        return macros_data[macros]['key']
+    def check_macro(macro: str, macros_data: Dict = Depends(get_macros_data)) -> bool:
+        if macro not in macros_data:
+            return False
+        return True
 
     @staticmethod
     def get_template_data() -> Dict:

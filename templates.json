@@ -6,12 +6,10 @@
             "macros_3"
         ]
     },
-    "test_1": {
-        "key": "test_1",
+    "template_666": {
+        "key": "template_666",
         "value": [
-            "macros_3",
-            "macros_6",
-            "macros_5"
+            "macros_3"
         ]
     }
 }

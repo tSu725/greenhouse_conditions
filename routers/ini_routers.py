@@ -36,16 +36,18 @@ def parse_ini():
     config.read(ini_path, encoding="utf-8")
     ini_dict = {section: dict(config.items(section)) for section in config.sections()}
     return ini_dict
-
 @router.post("/write_to_ini", summary="Вносим изменения в INI из макроса")
+
 def write_macros_to_ini(
-        macros: str,
-        macro_entry: Dict = Depends(Deps.get_macro_entry),
-        ini_path: str = Depends(Deps.get_ini_path)
+        macro_name: str,
+        ini_path: str = Depends(Deps.get_ini_path),
+        macros_data: Dict = Depends(Deps.get_macros_data)
 ):
-    # Используем вспомогательную функцию для записи макроса в INI
-    Deps.write_macro_to_ini(ini_path, "general", macro_entry)
-    return {"message": f"Макрос '{macros}' успешно добавлен в {ini_path}"}
+    section = "general"
+    macro = macros_data[macro_name]
+    Deps.write_macro_to_ini(ini_path, section, macro)
+    return {"message": f"Макрос '{macro_name}' успешно добавлен в {ini_path}"}
+
 @router.post("/write_to_ini_from_template", summary="Вносим изменения в INI из шаблона")
 def write_macros_to_ini_from_template(
         template: str,
